@@ -1,21 +1,21 @@
 <!doctype html>
 <!--
-  AuctionCopilot — 단일 파일 WebMCP 협업 데모.
-  모든 매물 수치, 추정식과 가중치는 제품 판단용이 아닌 데모용 임의값/예시입니다.
-  Reusable WebMCP pattern: these six tools are not carbid-specific. “List + detail + compare +
-  recommend + simulate” works for any auction/marketplace by replacing only the data source.
+  AuctionCopilot — a single-file WebMCP collaboration demo.
+  All listings, valuations, and weights are illustrative demo values, not product judgments.
+  Reusable WebMCP pattern: these six tools are not carbid-specific. "List + detail + compare +
+  recommend + simulate" works for any auction/marketplace by replacing only the data source.
 -->
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- ▼▼▼ 배포 URL 확정 후 오리진 트라이얼 토큰을 발급받아 아래 content 값을 교체하세요.
-       발급: https://developer.chrome.com/origintrials/#/register_trial/4163014905550602241
-       오리진 예: https://minjun0208.github.io
-       토큰을 넣으면 심사위원이 chrome://flags 를 켜지 않아도 툴이 노출됩니다. -->
+  <!-- After the deployment URL is fixed, register an origin-trial token and replace the content value below.
+       Register: https://developer.chrome.com/origintrials/#/register_trial/4163014905550602241
+       Origin example: https://minjun0208.github.io
+       With a token, tools are exposed to reviewers without enabling chrome://flags. -->
   <meta http-equiv="origin-trial" content="AkXVlSX2kklVlsPfd13ffrogmDZBmG3TrOrM78cs0DNLOBct/sBBlQ0L4YIALuN17gdPhCDhTwDvuNm/ood6SggAAABUeyJvcmlnaW4iOiJodHRwczovL21pbmp1bjAyMDguZ2l0aHViLmlvOjQ0MyIsImZlYXR1cmUiOiJXZWJNQ1AiLCJleHBpcnkiOjE3OTQ4NzM2MDB9">
   <meta name="color-scheme" content="light dark">
-  <title>AuctionCopilot — 사람과 에이전트의 입찰 전략</title>
+  <title>AuctionCopilot — Human-Agent Bidding Strategy</title>
   <style>
     :root{--bg:#f4f5f1;--panel:#fff;--ink:#15201c;--muted:#65716b;--line:#dce2dc;--accent:#28d17c;--accent2:#0b6544;--soft:#e6f8ee;--warn:#ffb84d;--shadow:0 15px 45px rgba(22,50,38,.09)}
     @media(prefers-color-scheme:dark){:root{--bg:#0c1310;--panel:#121c18;--ink:#edf7f1;--muted:#91a39a;--line:#26362e;--accent:#43e397;--accent2:#8cf0bd;--soft:#173529;--shadow:0 18px 55px rgba(0,0,0,.3)}}
@@ -31,71 +31,71 @@
   </style>
 </head>
 <body>
-<header><div class="row"><div class="brand"><div class="logo">↗</div><div><h1>AuctionCopilot</h1><p>목표는 사람이, 탐색·비교·시뮬레이션은 에이전트가.</p></div></div><div class="header-side"><span class="live"><i style="background:#65716b;box-shadow:none"></i>WebMCP 초기화 중…</span></div></div></header>
+<header><div class="row"><div class="brand"><div class="logo">↗</div><div><h1>AuctionCopilot</h1><p>The human sets the goal; the agent explores, compares, and simulates.</p></div></div><div class="header-side"><span class="live"><i style="background:#65716b;box-shadow:none"></i>WebMCP initializing…</span></div></div></header>
 <main>
   <div class="workspace">
-    <section class="panel"><div class="panel-head"><span class="eyebrow">01 · Discover</span><h2>매물 후보</h2><p>조건을 좁히거나 비교 트레이에 담으세요.</p></div>
-      <form class="filters" id="filterForm"><label><span>모델명</span><input id="make" placeholder="예: 아반떼"></label><label><span>최대 예산 (만원)</span><input id="maxPrice" type="number" placeholder="3000"></label><label><span>최대 주행거리 (km)</span><input id="maxMileage" type="number" placeholder="80000"></label><label><span>상태</span><select id="condition"><option value="">전체</option><option>상</option><option>중</option><option>하</option></select></label><button class="primary full">조건으로 탐색</button></form><div id="listings"></div>
+    <section class="panel"><div class="panel-head"><span class="eyebrow">01 · Discover</span><h2>Listings</h2><p>Narrow by criteria or add to the compare tray.</p></div>
+      <form class="filters" id="filterForm"><label><span>Model</span><input id="make" placeholder="e.g. Avante"></label><label><span>Max price (10k KRW)</span><input id="maxPrice" type="number" placeholder="3000"></label><label><span>Max mileage (km)</span><input id="maxMileage" type="number" placeholder="80000"></label><label><span>Condition</span><select id="condition"><option value="">All</option><option value="Excellent">Excellent</option><option value="Good">Good</option><option value="Fair">Fair</option></select></label><button class="primary full">Search listings</button></form><div id="listings"></div>
     </section>
-    <section class="panel"><div class="panel-head"><span class="eyebrow">02 · Strategize</span><h2>전략 상담</h2><p>목표를 말하면 에이전트가 후보와 대안을 설계합니다.</p></div><div class="consult"><div class="prompt"><strong>“2,500만원 안에서 가족용으로 안전하게.”</strong><p>단일 검색이 아니라 가치 추정 → 수요 반영 → 리스크별 추천의 다단계 의사결정입니다.</p></div>
-      <form class="form" id="strategyForm"><label class="full"><span>총 예산 (만원)</span><input id="budget" type="number" value="2500" required></label><label><span>용도</span><select id="purpose"><option>가족</option><option>출퇴근</option><option>업무</option><option>가성비</option></select></label><label><span>리스크 성향</span><select id="risk"><option>낮음</option><option>중간</option><option>높음</option></select></label><button class="primary full">AI와 추천 전략 만들기</button></form><div id="strategyResults"><div class="empty">상담 조건을 입력하면<br>추천 Top 3와 대안이 여기에 나타납니다.</div></div></div>
+    <section class="panel"><div class="panel-head"><span class="eyebrow">02 · Strategize</span><h2>Strategy advisor</h2><p>State your goal and the agent designs picks and alternatives.</p></div><div class="consult"><div class="prompt"><strong>"Family car under 25M KRW, played safe."</strong><p>Not a single search — a multi-step decision: value estimate → demand → risk-adjusted recommendation.</p></div>
+      <form class="form" id="strategyForm"><label class="full"><span>Total budget (10k KRW)</span><input id="budget" type="number" value="2500" required></label><label><span>Purpose</span><select id="purpose"><option value="Family">Family</option><option value="Commute">Commute</option><option value="Work">Work</option><option value="Value">Value</option></select></label><label><span>Risk appetite</span><select id="risk"><option value="Low">Low</option><option value="Medium">Medium</option><option value="High">High</option></select></label><button class="primary full">Build strategy with AI</button></form><div id="strategyResults"><div class="empty">Enter your criteria and<br>a Top 3 with alternatives appears here.</div></div></div>
     </section>
-    <section class="panel right-panel"><div class="panel-head"><span class="eyebrow">03 · Decide</span><h2>비교하고 입찰하기</h2><p>근거를 나란히 본 뒤 가격별 결과를 시뮬레이션하세요.</p></div><div class="right-section"><div id="detail"><div class="empty">매물을 선택하면 상세가 표시됩니다.</div></div><h3>비교 트레이</h3><div class="watch"><div class="watch-items" id="watchItems"></div><button class="ghost full" id="compareBtn" style="margin-top:9px;width:100%">담은 매물 비교 분석</button></div><div class="table-wrap" id="comparison"></div></div>
-      <div class="right-section"><h3>입찰 시뮬레이터</h3><form class="form" id="bidForm" style="padding:0;border:0"><label><span>매물</span><select id="bidId"></select></label><label><span>내 입찰가 (만원)</span><input id="myBid" type="number" value="1800" required></label><button class="primary full">낙찰 가능성과 기대이익 계산</button></form><div id="simResult"></div></div>
+    <section class="panel right-panel"><div class="panel-head"><span class="eyebrow">03 · Decide</span><h2>Compare & bid</h2><p>Review the evidence side by side, then simulate outcomes by price.</p></div><div class="right-section"><div id="detail"><div class="empty">Select a listing to see details.</div></div><h3>Compare tray</h3><div class="watch"><div class="watch-items" id="watchItems"></div><button class="ghost full" id="compareBtn" style="margin-top:9px;width:100%">Compare selected listings</button></div><div class="table-wrap" id="comparison"></div></div>
+      <div class="right-section"><h3>Bid simulator</h3><form class="form" id="bidForm" style="padding:0;border:0"><label><span>Listing</span><select id="bidId"></select></label><label><span>My bid (10k KRW)</span><input id="myBid" type="number" value="1800" required></label><button class="primary full">Estimate win chance & expected profit</button></form><div id="simResult"></div></div>
     </section>
   </div>
-  <section class="panel log-panel"><div class="log-head"><div><span class="eyebrow">Live trace</span><h2>에이전트 활동 로그</h2></div><button id="clearLogs">로그 지우기</button></div><div id="logs"></div></section>
-  <section class="panel about"><span class="eyebrow">About the pattern</span><h2>데이터를 넘어 재사용되는 협업 구조</h2><p>이 6개 툴은 carbid 전용이 아니라 ‘리스트 + 상세 + 비교 + 추천 + 시뮬레이션’이라는 어떤 경매/마켓플레이스에도 적용 가능한 WebMCP 패턴입니다. 데이터 소스만 교체하면 부동산 경매·중고장비·B2B 조달에 그대로 재사용됩니다.</p><p lang="en">These six tools are not carbid-specific: “list + detail + compare + recommend + simulate” is a reusable WebMCP pattern for any auction or marketplace. Replace the data source and the same pattern works for real-estate auctions, used equipment, and B2B procurement.</p><div class="notice">※ 모든 차량과 수치, 추정가, 점수 및 확률은 데모용 임의값이며 실제 투자·입찰 판단의 근거가 아닙니다.</div></section>
+  <section class="panel log-panel"><div class="log-head"><div><span class="eyebrow">Live trace</span><h2>Agent activity log</h2></div><button id="clearLogs">Clear log</button></div><div id="logs"></div></section>
+  <section class="panel about"><span class="eyebrow">About the pattern</span><h2>A collaboration pattern that reuses beyond the data</h2><p>These six tools are not carbid-specific: "list + detail + compare + recommend + simulate" is a reusable WebMCP pattern that applies to any auction or marketplace. Replace only the data source and it works for real-estate auctions, used equipment, and B2B procurement.</p><div class="notice">Note: all vehicles, figures, valuations, scores, and probabilities are illustrative demo values and are not a basis for real investment or bidding decisions.</div></section>
 </main>
 <script>
-// 모든 데이터 수치와 공개 일반 추정식/가중치는 설명 목적의 데모용 임의값입니다.
+// All figures and the public, generic valuation formula/weights are illustrative demo values.
 const DATA=[
- {id:'LOT-01',name:'아반떼 CN7',year:2022,priceManwon:1680,mileageKm:42000,fuel:'가솔린',condition:'상',inspectionScore:91,demandIndex:86},
- {id:'LOT-02',name:'쏘나타 DN8',year:2021,priceManwon:1890,mileageKm:61000,fuel:'LPG',condition:'중',inspectionScore:78,demandIndex:72},
- {id:'LOT-03',name:'그랜저 IG',year:2020,priceManwon:2050,mileageKm:78000,fuel:'가솔린',condition:'중',inspectionScore:75,demandIndex:81},
- {id:'LOT-04',name:'K5',year:2023,priceManwon:2380,mileageKm:29000,fuel:'가솔린',condition:'상',inspectionScore:94,demandIndex:89},
- {id:'LOT-05',name:'K3',year:2019,priceManwon:1080,mileageKm:93000,fuel:'가솔린',condition:'중',inspectionScore:71,demandIndex:68},
- {id:'LOT-06',name:'쏘렌토',year:2022,priceManwon:3190,mileageKm:51000,fuel:'디젤',condition:'상',inspectionScore:88,demandIndex:93},
- {id:'LOT-07',name:'싼타페',year:2020,priceManwon:2260,mileageKm:87000,fuel:'디젤',condition:'하',inspectionScore:63,demandIndex:79},
- {id:'LOT-08',name:'투싼',year:2021,priceManwon:2180,mileageKm:56000,fuel:'가솔린',condition:'상',inspectionScore:89,demandIndex:84},
- {id:'LOT-09',name:'스포티지',year:2023,priceManwon:2860,mileageKm:33000,fuel:'디젤',condition:'상',inspectionScore:92,demandIndex:91},
- {id:'LOT-10',name:'캐스퍼',year:2022,priceManwon:1420,mileageKm:38000,fuel:'가솔린',condition:'중',inspectionScore:80,demandIndex:75},
- {id:'LOT-11',name:'셀토스',year:2021,priceManwon:1780,mileageKm:47000,fuel:'가솔린',condition:'상',inspectionScore:87,demandIndex:82},
- {id:'LOT-12',name:'니로 HEV',year:2020,priceManwon:1620,mileageKm:66000,fuel:'하이브리드',condition:'중',inspectionScore:83,demandIndex:85}
+ {id:'LOT-01',name:'Avante CN7',year:2022,priceManwon:1680,mileageKm:42000,fuel:'Gasoline',condition:'Excellent',inspectionScore:91,demandIndex:86},
+ {id:'LOT-02',name:'Sonata DN8',year:2021,priceManwon:1890,mileageKm:61000,fuel:'LPG',condition:'Good',inspectionScore:78,demandIndex:72},
+ {id:'LOT-03',name:'Grandeur IG',year:2020,priceManwon:2050,mileageKm:78000,fuel:'Gasoline',condition:'Good',inspectionScore:75,demandIndex:81},
+ {id:'LOT-04',name:'K5',year:2023,priceManwon:2380,mileageKm:29000,fuel:'Gasoline',condition:'Excellent',inspectionScore:94,demandIndex:89},
+ {id:'LOT-05',name:'K3',year:2019,priceManwon:1080,mileageKm:93000,fuel:'Gasoline',condition:'Good',inspectionScore:71,demandIndex:68},
+ {id:'LOT-06',name:'Sorento',year:2022,priceManwon:3190,mileageKm:51000,fuel:'Diesel',condition:'Excellent',inspectionScore:88,demandIndex:93},
+ {id:'LOT-07',name:'Santa Fe',year:2020,priceManwon:2260,mileageKm:87000,fuel:'Diesel',condition:'Fair',inspectionScore:63,demandIndex:79},
+ {id:'LOT-08',name:'Tucson',year:2021,priceManwon:2180,mileageKm:56000,fuel:'Gasoline',condition:'Excellent',inspectionScore:89,demandIndex:84},
+ {id:'LOT-09',name:'Sportage',year:2023,priceManwon:2860,mileageKm:33000,fuel:'Diesel',condition:'Excellent',inspectionScore:92,demandIndex:91},
+ {id:'LOT-10',name:'Casper',year:2022,priceManwon:1420,mileageKm:38000,fuel:'Gasoline',condition:'Good',inspectionScore:80,demandIndex:75},
+ {id:'LOT-11',name:'Seltos',year:2021,priceManwon:1780,mileageKm:47000,fuel:'Gasoline',condition:'Excellent',inspectionScore:87,demandIndex:82},
+ {id:'LOT-12',name:'Niro HEV',year:2020,priceManwon:1620,mileageKm:66000,fuel:'Hybrid',condition:'Good',inspectionScore:83,demandIndex:85}
 ];
 const BASE={2019:1800,2020:2100,2021:2400,2022:2700,2023:3000};
 const state={watchlist:[],selectedId:null,strategy:null,filtered:DATA};
-const $=s=>document.querySelector(s), won=n=>`${Math.round(n).toLocaleString()}만원`, clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-function addLog(name,args,source='사람/툴'){const d=document.createElement('div');d.className='log';d.innerHTML=`<time>${new Date().toLocaleTimeString('ko-KR',{hour12:false})}</time><div class="tool">${name}<span class="agent">${source}</span></div><code>${escapeHtml(JSON.stringify(args))}</code>`;$('#logs').prepend(d)}
+const $=s=>document.querySelector(s), won=n=>`${Math.round(n).toLocaleString()} (10k KRW)`, clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+function addLog(name,args,source='human/tool'){const d=document.createElement('div');d.className='log';d.innerHTML=`<time>${new Date().toLocaleTimeString('en-US',{hour12:false})}</time><div class="tool">${name}<span class="agent">${source}</span></div><code>${escapeHtml(JSON.stringify(args))}</code>`;$('#logs').prepend(d)}
 function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function estimate(year,mileageKm,condition){const mileageFactor=clamp(1-(mileageKm/200000)*.4,.6,1),conditionFactor={상:1,중:.9,하:.78}[condition];return Math.round((BASE[year]||2100)*mileageFactor*conditionFactor)}
+function estimate(year,mileageKm,condition){const mileageFactor=clamp(1-(mileageKm/200000)*.4,.6,1),conditionFactor={Excellent:1,Good:.9,Fair:.78}[condition];return Math.round((BASE[year]||2100)*mileageFactor*conditionFactor)}
 function metrics(x){const estimateManwon=estimate(x.year,x.mileageKm,x.condition);return {estimateManwon,dealScore:+(((estimateManwon-x.priceManwon)/estimateManwon)*.6+(x.demandIndex/100)*.4).toFixed(3)}}
-function renderListings(items=state.filtered){$('#listings').innerHTML=items.map(x=>`<article class="listing ${state.selectedId===x.id?'selected':''}" data-id="${x.id}"><div class="card-top"><div><span class="id">${x.id}</span><h3>${x.name}</h3></div><span class="price">${won(x.priceManwon)}</span></div><p class="meta">${x.year}년 · ${x.mileageKm.toLocaleString()}km · ${x.fuel}</p><div class="chips"><span class="chip">상태 ${x.condition}</span><span class="chip">점검 ${x.inspectionScore}</span><span class="chip">수요 ${x.demandIndex}</span><button class="mini" data-watch="${x.id}">${state.watchlist.includes(x.id)?'✓ 담음':'+ 비교'}</button></div></article>`).join('')||'<div class="empty">조건에 맞는 매물이 없습니다.</div>'}
-function renderWatch(){ $('#watchItems').innerHTML=state.watchlist.length?state.watchlist.map(id=>`<button data-remove="${id}">${id} ×</button>`).join(''):'<span class="notice">카드에서 2개 이상 담아보세요.</span>';renderListings() }
-function selectListing(id,source){const x=DATA.find(v=>v.id===id);if(!x)return null;state.selectedId=id;const m=metrics(x);$('#detail').innerHTML=`<div class="detail"><span class="id">선택됨 · ${x.id}</span><h3>${x.name} <span class="score">${won(x.priceManwon)}</span></h3><p>${x.year}년 · ${x.mileageKm.toLocaleString()}km · ${x.fuel} · 상태 ${x.condition}</p><div class="chips"><span class="chip">추정가 ${won(m.estimateManwon)}</span><span class="chip">딜 점수 ${m.dealScore}</span><span class="chip">점검 ${x.inspectionScore}/100</span></div></div>`;$('#bidId').value=id;renderListings();addLog('get_listing',{id},source);return x}
-function search(args,source){const {make,maxPrice,maxMileage,condition}=args;state.filtered=DATA.filter(x=>(!make||x.name.includes(make))&&(!maxPrice||x.priceManwon<=+maxPrice)&&(!maxMileage||x.mileageKm<=+maxMileage)&&(!condition||x.condition===condition));renderListings();addLog('search_listings',args,source);return state.filtered}
-function compare(ids,source){const rows=ids.map(id=>DATA.find(x=>x.id===id)).filter(Boolean).map(x=>{const m=metrics(x),pros=[m.dealScore>=.45?`추정가 대비 ${won(m.estimateManwon-x.priceManwon)} 여유`:x.inspectionScore>=88?`점검 ${x.inspectionScore}점 최상위`:x.mileageKm<40000?`주행 ${Math.round(x.mileageKm/1000)}천km 저주행`:`진입가 ${won(x.priceManwon)}로 부담 적음`.replace("원로","원으로"),x.demandIndex>=85?'수요 최상위':'낮은 경쟁 가능성'],cons=[x.condition==='하'?'상태 하 — 수리비 리스크':x.mileageKm>70000?`주행 ${Math.round(x.mileageKm/1000)}천km 부담`:x.demandIndex>=85?`수요 ${x.demandIndex} — 경쟁 과열 우려`:x.inspectionScore<80?`점검 ${x.inspectionScore}점 — 확인 필요`:'예산 내 경쟁 가능'];return {...x,...m,pros,cons}});state.watchlist=rows.map(x=>x.id);renderWatch();$('#comparison').innerHTML=rows.length?`<table><thead><tr><th>매물</th><th>추정가</th><th>딜 점수</th><th>장점 / 유의</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${x.id}<br>${x.name}</td><td>${won(x.estimateManwon)}</td><td class="score">${x.dealScore}</td><td>${x.pros[0]}<br><span class="notice">${x.cons[0]}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">비교할 매물을 담아주세요.</div>';addLog('compare_lots',{ids},source);return rows}
-function recommend(args,source){const purposeBoost={가족:x=>/쏘렌토|싼타페|투싼|스포티지|셀토스|니로/.test(x.name)?.18:0,출퇴근:x=>/아반떼|K3|캐스퍼/.test(x.name)?.16:0,업무:x=>x.mileageKm<60000?.12:0,가성비:x=>x.priceManwon<1900?.18:0}[args.purpose];const risk=x=>args.riskTolerance==='낮음'?(x.inspectionScore/100*.22+(x.condition==='상'?.12:0)):args.riskTolerance==='높음'?metrics(x).dealScore*.25:(x.inspectionScore/100*.1);const ranked=DATA.filter(x=>x.priceManwon<=args.budgetManwon).map(x=>({...x,...metrics(x),fit:metrics(x).dealScore+purposeBoost(x)+risk(x)})).sort((a,b)=>b.fit-a.fit);const top3=ranked.slice(0,3).map((x,i)=>({...x,reason:`${args.purpose} 목적 적합도와 딜 점수 ${x.dealScore}, 점검 ${x.inspectionScore}점을 함께 반영`,rank:i+1}));const alternative=ranked[3]||null;state.strategy={...args,top3,alternative};state.watchlist=top3.map(x=>x.id);renderWatch();$('#strategyResults').innerHTML=top3.map(x=>`<article class="rec"><span class="rank">0${x.rank}</span><h3>${x.id} · ${x.name}</h3><div><b>${won(x.priceManwon)}</b> <span class="score">추정 ${won(x.estimateManwon)}</span></div><p>${x.reason}</p></article>`).join('')+(alternative?`<p class="notice">대안: ${alternative.id} ${alternative.name} — 예산 내 차순위 후보</p>`:'');addLog('recommend_strategy',args,source);return {top3,alternative}}
-function simulate(args,source){const x=DATA.find(v=>v.id===args.id);if(!x)return null;const e=estimate(x.year,x.mileageKm,x.condition),ratio=args.myBidManwon/x.priceManwon;const probability=Math.round(clamp(20+(ratio-.75)*160+(x.demandIndex-50)*.15,8,94));const expectedProfit=e-args.myBidManwon;const riskComment=args.myBidManwon>e?'추정가를 넘는 입찰로 손실 위험이 큽니다.':probability<40?'가격 여유는 있지만 낙찰 가능성이 낮습니다.':expectedProfit<e*.08?'낙찰 가능성과 함께 이익 여유도 점검하세요.':'낙찰 가능성과 가치 여유가 균형적입니다.';const out={id:x.id,probabilityPercent:probability,expectedProfitManwon:expectedProfit,riskComment};selectListing(x.id,source);$('#simResult').innerHTML=`<div class="simout"><span class="notice">예상 낙찰확률</span><div class="metric">${probability}%</div><b>기대이익 ${won(expectedProfit)}</b><p>${riskComment}</p></div>`;addLog('simulate_bid',args,source);return out}
+function renderListings(items=state.filtered){$('#listings').innerHTML=items.map(x=>`<article class="listing ${state.selectedId===x.id?'selected':''}" data-id="${x.id}"><div class="card-top"><div><span class="id">${x.id}</span><h3>${x.name}</h3></div><span class="price">${won(x.priceManwon)}</span></div><p class="meta">${x.year} · ${x.mileageKm.toLocaleString()}km · ${x.fuel}</p><div class="chips"><span class="chip">Cond. ${x.condition}</span><span class="chip">Inspect. ${x.inspectionScore}</span><span class="chip">Demand ${x.demandIndex}</span><button class="mini" data-watch="${x.id}">${state.watchlist.includes(x.id)?'✓ Added':'+ Compare'}</button></div></article>`).join('')||'<div class="empty">No listings match your criteria.</div>'}
+function renderWatch(){ $('#watchItems').innerHTML=state.watchlist.length?state.watchlist.map(id=>`<button data-remove="${id}">${id} ×</button>`).join(''):'<span class="notice">Add two or more from the cards.</span>';renderListings() }
+function selectListing(id,source){const x=DATA.find(v=>v.id===id);if(!x)return null;state.selectedId=id;const m=metrics(x);$('#detail').innerHTML=`<div class="detail"><span class="id">Selected · ${x.id}</span><h3>${x.name} <span class="score">${won(x.priceManwon)}</span></h3><p>${x.year} · ${x.mileageKm.toLocaleString()}km · ${x.fuel} · Cond. ${x.condition}</p><div class="chips"><span class="chip">Est. ${won(m.estimateManwon)}</span><span class="chip">Deal score ${m.dealScore}</span><span class="chip">Inspect. ${x.inspectionScore}/100</span></div></div>`;$('#bidId').value=id;renderListings();addLog('get_listing',{id},source);return x}
+function search(args,source){const {make,maxPrice,maxMileage,condition}=args;state.filtered=DATA.filter(x=>(!make||x.name.toLowerCase().includes(String(make).toLowerCase()))&&(!maxPrice||x.priceManwon<=+maxPrice)&&(!maxMileage||x.mileageKm<=+maxMileage)&&(!condition||x.condition===condition));renderListings();addLog('search_listings',args,source);return state.filtered}
+function compare(ids,source){const rows=ids.map(id=>DATA.find(x=>x.id===id)).filter(Boolean).map(x=>{const m=metrics(x),pros=[m.dealScore>=.45?`${won(m.estimateManwon-x.priceManwon)} below estimate`:x.inspectionScore>=88?`Top inspection at ${x.inspectionScore}`:x.mileageKm<40000?`Low mileage ${Math.round(x.mileageKm/1000)}k km`:`Low entry price ${won(x.priceManwon)}`,x.demandIndex>=85?'Top demand':'Lower competition likely'],cons=[x.condition==='Fair'?'Fair condition — repair risk':x.mileageKm>70000?`High mileage ${Math.round(x.mileageKm/1000)}k km`:x.demandIndex>=85?`Demand ${x.demandIndex} — competition risk`:x.inspectionScore<80?`Inspection ${x.inspectionScore} — verify`:'Competitive within budget'];return {...x,...m,pros,cons}});state.watchlist=rows.map(x=>x.id);renderWatch();$('#comparison').innerHTML=rows.length?`<table><thead><tr><th>Listing</th><th>Est. value</th><th>Deal score</th><th>Pros / Caution</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${x.id}<br>${x.name}</td><td>${won(x.estimateManwon)}</td><td class="score">${x.dealScore}</td><td>${x.pros[0]}<br><span class="notice">${x.cons[0]}</span></td></tr>`).join('')}</tbody></table>`:'<div class="empty">Add listings to compare.</div>';addLog('compare_lots',{ids},source);return rows}
+function recommend(args,source){const purposeBoost={'Family':x=>/Sorento|Santa Fe|Tucson|Sportage|Seltos|Niro/.test(x.name)?.18:0,'Commute':x=>/Avante|K3|Casper/.test(x.name)?.16:0,'Work':x=>x.mileageKm<60000?.12:0,'Value':x=>x.priceManwon<1900?.18:0}[args.purpose];const label=args.purpose;const risk=x=>args.riskTolerance==='Low'?(x.inspectionScore/100*.22+(x.condition==='Excellent'?.12:0)):args.riskTolerance==='High'?metrics(x).dealScore*.25:(x.inspectionScore/100*.1);const ranked=DATA.filter(x=>x.priceManwon<=args.budgetManwon).map(x=>({...x,...metrics(x),fit:metrics(x).dealScore+purposeBoost(x)+risk(x)})).sort((a,b)=>b.fit-a.fit);const top3=ranked.slice(0,3).map((x,i)=>({...x,reason:`Fit for ${label} use with deal score ${x.dealScore} and inspection ${x.inspectionScore}`,rank:i+1}));const alternative=ranked[3]||null;state.strategy={...args,top3,alternative};state.watchlist=top3.map(x=>x.id);renderWatch();$('#strategyResults').innerHTML=top3.map(x=>`<article class="rec"><span class="rank">0${x.rank}</span><h3>${x.id} · ${x.name}</h3><div><b>${won(x.priceManwon)}</b> <span class="score">Est. ${won(x.estimateManwon)}</span></div><p>${x.reason}</p></article>`).join('')+(alternative?`<p class="notice">Alternative: ${alternative.id} ${alternative.name} — next best within budget</p>`:'');addLog('recommend_strategy',args,source);return {top3,alternative}}
+function simulate(args,source){const x=DATA.find(v=>v.id===args.id);if(!x)return null;const e=estimate(x.year,x.mileageKm,x.condition),ratio=args.myBidManwon/x.priceManwon;const probability=Math.round(clamp(20+(ratio-.75)*160+(x.demandIndex-50)*.15,8,94));const expectedProfit=e-args.myBidManwon;const riskComment=args.myBidManwon>e?'Bidding above the estimate carries high loss risk.':probability<40?'Price headroom exists, but win probability is low.':expectedProfit<e*.08?'Check both win probability and profit headroom.':'Win probability and value headroom are balanced.';const out={id:x.id,probabilityPercent:probability,expectedProfitManwon:expectedProfit,riskComment};selectListing(x.id,source);$('#simResult').innerHTML=`<div class="simout"><span class="notice">Estimated win probability</span><div class="metric">${probability}%</div><b>Expected profit ${won(expectedProfit)}</b><p>${riskComment}</p></div>`;addLog('simulate_bid',args,source);return out}
 
-$('#filterForm').onsubmit=e=>{e.preventDefault();search({make:$('#make').value,maxPrice:+$('#maxPrice').value||undefined,maxMileage:+$('#maxMileage').value||undefined,condition:$('#condition').value},'사람')};
-$('#strategyForm').onsubmit=e=>{e.preventDefault();recommend({budgetManwon:+$('#budget').value,purpose:$('#purpose').value,riskTolerance:$('#risk').value},'사람')};
-$('#bidForm').onsubmit=e=>{e.preventDefault();simulate({id:$('#bidId').value,myBidManwon:+$('#myBid').value},'사람')};
-$('#listings').onclick=e=>{const w=e.target.dataset.watch;if(w){e.stopPropagation();state.watchlist.includes(w)?state.watchlist=state.watchlist.filter(x=>x!==w):state.watchlist.push(w);renderWatch();return}const card=e.target.closest('.listing');if(card)selectListing(card.dataset.id,'사람')};
-$('#watchItems').onclick=e=>{if(e.target.dataset.remove){state.watchlist=state.watchlist.filter(x=>x!==e.target.dataset.remove);renderWatch()}};$('#compareBtn').onclick=()=>compare(state.watchlist,'사람');$('#clearLogs').onclick=()=>$('#logs').innerHTML='';
+$('#filterForm').onsubmit=e=>{e.preventDefault();search({make:$('#make').value,maxPrice:+$('#maxPrice').value||undefined,maxMileage:+$('#maxMileage').value||undefined,condition:$('#condition').value},'human')};
+$('#strategyForm').onsubmit=e=>{e.preventDefault();recommend({budgetManwon:+$('#budget').value,purpose:$('#purpose').value,riskTolerance:$('#risk').value},'human')};
+$('#bidForm').onsubmit=e=>{e.preventDefault();simulate({id:$('#bidId').value,myBidManwon:+$('#myBid').value},'human')};
+$('#listings').onclick=e=>{const w=e.target.dataset.watch;if(w){e.stopPropagation();state.watchlist.includes(w)?state.watchlist=state.watchlist.filter(x=>x!==w):state.watchlist.push(w);renderWatch();return}const card=e.target.closest('.listing');if(card)selectListing(card.dataset.id,'human')};
+$('#watchItems').onclick=e=>{if(e.target.dataset.remove){state.watchlist=state.watchlist.filter(x=>x!==e.target.dataset.remove);renderWatch()}};$('#compareBtn').onclick=()=>compare(state.watchlist,'human');$('#clearLogs').onclick=()=>$('#logs').innerHTML='';
 $('#bidId').innerHTML=DATA.map(x=>`<option value="${x.id}">${x.id} · ${x.name}</option>`).join('');renderListings();renderWatch();
 
-// ── WebMCP 등록 ────────────────────────────────────────────────────────
-// 각 execute는 위와 동일한 실제 DATA/state/UI 경로를 사용합니다(mock 아님).
+// ── WebMCP registration ────────────────────────────────────────────────
+// Each execute uses the same real DATA/state/UI path as above (not mocked).
 const schema={obj:(properties,required=[])=>({type:'object',properties,required,additionalProperties:false}),str:{type:'string'},num:{type:'number'}};
 
-// WebMCP execute 반환형은 Promise<any>라 생 반환도 유효하지만, {content:[{type:'text'}]}로 래핑하면
-// 에이전트/인스펙터가 text 필드를 일관되게 읽어 표시가 안정적입니다(필수 아님, 편의).
+// WebMCP execute returns Promise<any>, so a raw return is valid; wrapping in {content:[{type:'text'}]}
+// lets agents/inspectors read the text field consistently (convenience, not required).
 const ok=(summary,data)=>({content:[{type:'text',text:summary+(data===undefined?'':'\n'+JSON.stringify(data))}]});
-const fail=msg=>({content:[{type:'text',text:'오류: '+msg}],isError:true});
+const fail=msg=>({content:[{type:'text',text:'Error: '+msg}],isError:true});
 const slim=x=>({id:x.id,name:x.name,year:x.year,priceManwon:x.priceManwon,mileageKm:x.mileageKm,condition:x.condition,inspectionScore:x.inspectionScore,demandIndex:x.demandIndex});
 
-// Chrome 150+ 현행 스펙은 document.modelContext. Chrome 149 / Edge 147은 navigator.modelContext.
+// Chrome 150+ current spec is document.modelContext. Chrome 149 / Edge 147 use navigator.modelContext.
 function mcpHost(){
   if(document.modelContext&&document.modelContext.registerTool)return document.modelContext;
   if(navigator.modelContext&&navigator.modelContext.registerTool)return navigator.modelContext;
@@ -105,61 +105,61 @@ function mcpHost(){
 async function registerWebMCP(){
   const host=mcpHost();
   if(!host){
-    addLog('WebMCP','modelContext 비활성/사용 불가 — flags 미활성·오리진 트라이얼 토큰 없음·비보안 오리진·Permissions Policy 차단 등이 원인일 수 있습니다.','시스템');
-    const badge=document.querySelector('.live');if(badge)badge.innerHTML='<i style="background:#ffb84d;box-shadow:0 0 0 4px rgba(255,184,77,.2)"></i>WebMCP 비활성/사용 불가';
+    addLog('WebMCP','modelContext unavailable — could be flags off, no origin-trial token, insecure origin, or Permissions Policy block.','system');
+    const badge=document.querySelector('.live');if(badge)badge.innerHTML='<i style="background:#ffb84d;box-shadow:0 0 0 4px rgba(255,184,77,.2)"></i>WebMCP unavailable';
     return;
   }
   const tools=[
     {name:'search_listings',
-     description:'조건에 맞는 경매 매물을 검색하고 화면 목록을 갱신합니다.',
-     inputSchema:schema.obj({make:schema.str,maxPrice:schema.num,maxMileage:schema.num,condition:{type:'string',enum:['상','중','하']}}),
+     description:'Search auction listings by criteria and refresh the on-screen list.',
+     inputSchema:schema.obj({make:schema.str,maxPrice:schema.num,maxMileage:schema.num,condition:{type:'string',enum:['Excellent','Good','Fair']}}),
      annotations:{readOnlyHint:false},
-     execute:async a=>{const r=search(a,'에이전트');return ok(`조건에 맞는 매물 ${r.length}건을 찾아 목록을 갱신했습니다.`,r.map(slim))}},
+     execute:async a=>{const r=search(a,'agent');return ok(`Found ${r.length} matching listings and refreshed the list.`,r.map(slim))}},
 
     {name:'get_listing',
-     description:'ID로 매물 상세를 조회하고 선택된 매물로 표시합니다.',
+     description:'Fetch a listing by ID and mark it as the selected listing.',
      inputSchema:schema.obj({id:schema.str},['id']),
      annotations:{readOnlyHint:false},
-     execute:async a=>{const x=selectListing(a.id,'에이전트');if(!x)return fail(`${a.id} 매물을 찾을 수 없습니다.`);
-       const m=metrics(x);return ok(`${x.id} ${x.name} 상세를 표시했습니다.`,{...slim(x),...m})}},
+     execute:async a=>{const x=selectListing(a.id,'agent');if(!x)return fail(`Listing ${a.id} not found.`);
+       const m=metrics(x);return ok(`Showing details for ${x.id} ${x.name}.`,{...slim(x),...m})}},
 
     {name:'estimate_value',
-     description:'연식, 주행거리, 상태로 공개 데모 일반식 기반 가치를 추정합니다.',
-     inputSchema:schema.obj({year:schema.num,mileageKm:schema.num,condition:{type:'string',enum:['상','중','하']}},['year','mileageKm','condition']),
-     annotations:{readOnlyHint:true}, // 순수 계산 — 어떤 state/DOM도 변경하지 않으므로 true
-     execute:async a=>{const estimateManwon=estimate(a.year,a.mileageKm,a.condition);addLog('estimate_value',a,'에이전트');
-       return ok(`추정가 ${won(estimateManwon)}.`,{estimateManwon,mileageFactor:clamp(1-(a.mileageKm/200000)*.4,.6,1),conditionFactor:{'상':1,'중':.9,'하':.78}[a.condition]})}},
+     description:'Estimate value from year, mileage, and condition using a public demo formula.',
+     inputSchema:schema.obj({year:schema.num,mileageKm:schema.num,condition:{type:'string',enum:['Excellent','Good','Fair']}},['year','mileageKm','condition']),
+     annotations:{readOnlyHint:true}, // pure calculation — changes no state/DOM, so true
+     execute:async a=>{const estimateManwon=estimate(a.year,a.mileageKm,a.condition);addLog('estimate_value',a,'agent');
+       return ok(`Estimated value ${won(estimateManwon)}.`,{estimateManwon,mileageFactor:clamp(1-(a.mileageKm/200000)*.4,.6,1),conditionFactor:{Excellent:1,Good:.9,Fair:.78}[a.condition]})}},
 
     {name:'compare_lots',
-     description:'여러 매물의 추정가, 딜 점수, 장단점을 비교하고 비교 트레이를 갱신합니다.',
+     description:'Compare estimated value, deal score, and pros/cons across listings and update the compare tray.',
      inputSchema:schema.obj({ids:{type:'array',items:schema.str,minItems:2}},['ids']),
      annotations:{readOnlyHint:false},
-     execute:async a=>{const rows=compare(a.ids,'에이전트');if(!rows.length)return fail('비교 가능한 매물이 없습니다.');
-       return ok(`${rows.length}건을 비교했습니다.`,rows.map(x=>({id:x.id,name:x.name,priceManwon:x.priceManwon,estimateManwon:x.estimateManwon,dealScore:x.dealScore,pros:x.pros,cons:x.cons})))}},
+     execute:async a=>{const rows=compare(a.ids,'agent');if(!rows.length)return fail('No comparable listings.');
+       return ok(`Compared ${rows.length} listings.`,rows.map(x=>({id:x.id,name:x.name,priceManwon:x.priceManwon,estimateManwon:x.estimateManwon,dealScore:x.dealScore,pros:x.pros,cons:x.cons})))}},
 
     {name:'recommend_strategy',
-     description:'예산, 용도, 리스크 성향에 맞춘 Top 3와 대안을 만들고 전략 패널을 갱신합니다.',
-     inputSchema:schema.obj({budgetManwon:schema.num,purpose:{type:'string',enum:['가족','출퇴근','업무','가성비']},riskTolerance:{type:'string',enum:['낮음','중간','높음']}},['budgetManwon','purpose','riskTolerance']),
+     description:'Build a Top 3 with an alternative from budget, purpose, and risk appetite, and update the strategy panel.',
+     inputSchema:schema.obj({budgetManwon:schema.num,purpose:{type:'string',enum:['Family','Commute','Work','Value']},riskTolerance:{type:'string',enum:['Low','Medium','High']}},['budgetManwon','purpose','riskTolerance']),
      annotations:{readOnlyHint:false},
-     execute:async a=>{const r=recommend(a,'에이전트');if(!r.top3.length)return fail(`예산 ${won(a.budgetManwon)} 안에 해당하는 매물이 없습니다.`);
-       return ok(`예산 ${won(a.budgetManwon)} / ${a.purpose} / 리스크 ${a.riskTolerance} 기준 Top ${r.top3.length}을 추천했습니다.`,
+     execute:async a=>{const r=recommend(a,'agent');if(!r.top3.length)return fail(`No listings within budget ${won(a.budgetManwon)}.`);
+       return ok(`Recommended Top ${r.top3.length} for budget ${won(a.budgetManwon)} / ${a.purpose} / risk ${a.riskTolerance}.`,
          {top3:r.top3.map(x=>({rank:x.rank,id:x.id,name:x.name,priceManwon:x.priceManwon,estimateManwon:x.estimateManwon,dealScore:x.dealScore,reason:x.reason})),
           alternative:r.alternative?{id:r.alternative.id,name:r.alternative.name,priceManwon:r.alternative.priceManwon}:null})}},
 
     {name:'simulate_bid',
-     description:'입찰가별 예상 낙찰확률, 기대이익, 리스크를 계산하고 시뮬레이터에 표시합니다.',
+     description:'Compute win probability, expected profit, and risk by bid amount, and show it in the simulator.',
      inputSchema:schema.obj({id:schema.str,myBidManwon:schema.num},['id','myBidManwon']),
      annotations:{readOnlyHint:false},
-     execute:async a=>{const r=simulate(a,'에이전트');if(!r)return fail(`${a.id} 매물을 찾을 수 없습니다.`);
-       return ok(`${r.id} 입찰가 ${won(a.myBidManwon)} → 낙찰확률 ${r.probabilityPercent}%, 기대이익 ${won(r.expectedProfitManwon)}.`,r)}}
+     execute:async a=>{const r=simulate(a,'agent');if(!r)return fail(`Listing ${a.id} not found.`);
+       return ok(`${r.id} bid ${won(a.myBidManwon)} → win probability ${r.probabilityPercent}%, expected profit ${won(r.expectedProfitManwon)}.`,r)}}
   ];
 
   const registered=[];
   for(const t of tools){
     try{ await host.registerTool(t); registered.push(t.name) }
-    catch(e){ addLog('registerTool 실패',{tool:t.name,error:String(e&&e.message||e)},'시스템') }
+    catch(e){ addLog('registerTool failed',{tool:t.name,error:String(e&&e.message||e)},'system') }
   }
-  // 실제 성공한 개수만으로 배지 게이트: 전부 성공=초록, 일부=주황, 전무=빨강
+  // Badge gate by actual successes only: all=green, some=amber, none=red
   const badge=document.querySelector('.live');
   if(badge){
     const n=registered.length,total=tools.length;
@@ -167,7 +167,7 @@ async function registerWebMCP(){
     const glow=n===total?'0 0 0 4px color-mix(in srgb,var(--accent) 20%,transparent)':'none';
     badge.innerHTML=`<i style="background:${color};box-shadow:${glow}"></i>WebMCP ${n}/${total} tools registered`;
   }
-  addLog('registerTool',{host:host===document.modelContext?'document.modelContext':'navigator.modelContext',registered,failed:tools.length-registered.length},'시스템');
+  addLog('registerTool',{host:host===document.modelContext?'document.modelContext':'navigator.modelContext',registered,failed:tools.length-registered.length},'system');
 }
 registerWebMCP();
 </script>
